@@ -1,7 +1,6 @@
-# An LDaCA API Wrapper
+### An LDaCA API Wrapper
 
-WIP
-
+# Work in progress
 
 Example:
 

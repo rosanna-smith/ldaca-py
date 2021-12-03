@@ -1,6 +1,7 @@
 venv
 .env
-test/test-data/*
-!test/test-data/.gitkeep
+.pytest_cache
+test/data/*
+!test/data/.gitkeep
 .idea
 .DS_Store
