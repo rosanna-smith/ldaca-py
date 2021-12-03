@@ -1,0 +1,6 @@
+venv
+.env
+test/test-data/*
+!test/test-data/.gitkeep
+.idea
+.DS_Store
