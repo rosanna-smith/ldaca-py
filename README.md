@@ -33,7 +33,9 @@ or
 ```python
 my_other_file_picker = lambda f : f if 'OrthographicTranscription' in f['@type'] else None
 ```
-ldaca.store_data(sub_collection='arcp://name,my-corpus/subcorpus/subcorpusname', entity_type='DialogueText', file_picker=my_file_picker)
+and:
+```python
+ldaca.store_data(sub_collection='arcp://name,my-corpus/subcorpus/subcorpusname', entity_type='DialogueText', file_picker=my_other_file_picker)
 ldaca.pandas_dataframe
 ```
 
