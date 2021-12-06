@@ -17,6 +17,11 @@ def test_store_all_data():
     ldaca.get_members_of_collection()
     member = ldaca.collection_members[1]
     ldaca.store_data(sub_collection=member['crateId'], entity_type='DialogueText')
-    ldaca.pandas_data_frame
+    ldaca.pandas_dataframe.to_csv(ldaca.data_dir + '/pd.csv')
+
+    assert ldaca.pandas_dataframe.values.size > 0
 
 
+def test_load_local_files():
+    pd = ldaca.load_local_files()
+    assert ldaca.pandas_dataframe.values.size == pd.values.size

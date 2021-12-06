@@ -4,11 +4,34 @@ import json
 from rocrate_lang.rocrate_plus import ROCratePlus
 from rocrate.utils import as_list
 import pandas
+import shutil
+import uuid
+import glob
 
 
-class LDaCA():
+def basic_file_picker(file_metadata_json):
+    if file_metadata_json['encodingFormat'] == 'text/csv':
+        return file_metadata_json
+
+
+def clear_files(files_dir):
+    if os.path.exists(files_dir):
+        for filename in os.listdir(files_dir):
+            file_path = os.path.join(files_dir, filename)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print('Failed to delete %s. Reason: %s' % (file_path, e))
+    else:
+        os.mkdir(files_dir)
+
+
+class LDaCA:
     """
-    An LDaCA API wrapper
+    An LDaCA REST API wrapper
     """
     BASE_PROFILE = "https://github.com/Language-Research-Technology/ro-crate-profile"
 
@@ -23,7 +46,7 @@ class LDaCA():
         self.collection_type = None
         self.collection_members = None
         self.text_files = []
-        self.pandas_data_frame = pandas.DataFrame()
+        self.pandas_dataframe = pandas.DataFrame()
 
     def set_data_dir(self, data_dir):
         self.data_dir = data_dir
@@ -114,7 +137,6 @@ class LDaCA():
                 if col.id in member['@id']:
                     collection_dialogues.append(dialogue)
         if len(collection_dialogues) > 0:
-
             for col_dialogue in collection_dialogues:
                 files = []
                 dialogue = col_dialogue.as_jsonld()
@@ -123,7 +145,7 @@ class LDaCA():
                 if 'file_picker' in kwargs:
                     file_picker = kwargs['file_picker']
                 else:
-                    file_picker = self.basic_file_picker
+                    file_picker = basic_file_picker
                 self.append_if_text(files, file_picker)
             self.download_filtered_files()
             return "Found %d files" % len(self.text_files)
@@ -138,13 +160,60 @@ class LDaCA():
             if filtered_file:
                 self.text_files.append(filtered_file)
 
-    def basic_file_picker(self, file_metadata_json):
-        if file_metadata_json['encodingFormat'] == 'text/csv':
-            return file_metadata_json
-
     # This uses pandas to store files in memory for analysis.
     # TODO: create other options of downloading files
     def download_filtered_files(self):
-        for text_file in self.text_files:
-            pd = pandas.read_csv(text_file['@id'], storage_options={'Authorization': 'Bearer %s' % self.token})
-            self.pandas_data_frame.append(pd)
+        # Clear
+        if len(self.text_files) > 0:
+            columns = self.get_columns(self.text_files[0]['csvw:tableSchema']['@id'])
+            self.pandas_dataframe = pandas.DataFrame(columns=columns)
+            clear_files(self.data_dir + '/files')
+            for text_file in self.text_files:
+                self.get_columns(text_file['csvw:tableSchema']['@id'])
+                pd = pandas.read_csv(
+                    text_file['@id'],
+                    storage_options={'Authorization': 'Bearer %s' % self.token}
+                )
+                self.pandas_dataframe = self.pandas_dataframe.append(pd, sort=False)
+                # Save it to a file while we are here
+                if text_file['name']:
+                    name = text_file['name'].replace(' ', '_') + '.csv'
+                else:
+                    # If it doesnt have a name:
+                    name = str(uuid.uuid4()) + '.csv'
+                pd.to_csv(self.data_dir + '/files/' + name)
+        else:
+            return "No files"
+
+    def get_columns(self, schema_id, display=False):
+        schema = self.crate.dereference(schema_id)
+        schema_json = schema.as_jsonld()
+        columns = []
+        for column in schema_json['columns']:
+            colMeta = self.crate.dereference(column['@id'])
+            colMeta_json = colMeta.as_jsonld()
+            if display:
+                print("Column: %s : %s" % (colMeta_json['name'] or colMeta_json['@id'], colMeta_json['description']))
+            columns.append(colMeta_json['name'] or colMeta_json['@id'])
+            if 'sameAs' in colMeta:
+                sameAs = colMeta_json['sameAs']
+                sameAsEl = self.crate.dereference(sameAs['@id'])
+                if sameAsEl:
+                    sameAsEl_json = sameAsEl.as_jsonld()
+                    if display:
+                        print("sameAs: %s : %s" % (sameAsEl_json['name'], sameAsEl_json['description']))
+        return columns
+
+    # Just as test : Loads all local files into a dataframe
+    def load_local_files(self):
+
+        all_files = glob.glob(self.data_dir + "/*.csv")
+        pdl = []
+
+        for filename in all_files:
+            spd = pandas.read_csv(filename, index_col=None, header=0)
+            pdl.append(spd)
+
+        pd = pandas.concat(pdl, axis=0, ignore_index=True)
+
+        return pd
