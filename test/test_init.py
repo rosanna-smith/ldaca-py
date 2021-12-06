@@ -25,6 +25,6 @@ def test_init():
 def test_get_a_member():
     global member
     member = ldaca.collection_members[0]
-    mId = ldaca.crate.dereference(member['crateId'])
-    assert mId == member['crateId']
+    m = ldaca.crate.dereference(member['crateId'])
+    assert m.id == member['crateId']
 
