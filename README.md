@@ -11,6 +11,12 @@ ldaca = LDaCA(url='https://ldaca.api.url/api', token='my-token-12-34')
 ldaca.get_collection(collection='arcp://name,my-corpus/corpus/root', collection_type='Collection', data_dir='data')
 ```
 
+You can find the members of your the collection by:
+
+```python
+members = ldaca.get_members_of_collection()
+```
+
 Then select a particular corpus and store it in a pandas dataFrame
 
 ```python
@@ -21,11 +27,12 @@ ldaca.pandas_dataframe
 
 Optional: you can pass a file_picker function
 ```python
-
-def my_file_picker(file_metadata):
-    if file_metadata['encodingFormat'] == 'text/csv':
-        return file_metadata
-
+my_file_picker = lambda f : f if f['encodingFormat'] == 'text/csv' else None 
+```
+or
+```python
+my_other_file_picker = lambda f : f if 'OrthographicTranscription' in f['@type'] else None
+```
 ldaca.store_data(sub_collection='arcp://name,my-corpus/subcorpus/subcorpusname', entity_type='DialogueText', file_picker=my_file_picker)
 ldaca.pandas_dataframe
 ```
