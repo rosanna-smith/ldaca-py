@@ -7,6 +7,8 @@ API_TOKEN = os.getenv('API_KEY')
 URL = os.getenv('URL')
 COLLECTION = os.getenv('COLLECTION')
 global ldaca
+global member
+
 
 def test_init():
     global ldaca
@@ -14,5 +16,15 @@ def test_init():
     # Saves the metadata in the data_dir
     ldaca.get_collection(collection=COLLECTION, collection_type='Collection', data_dir='data')
 
-    ldaca.collection_members
+    for cm in ldaca.collection_members:
+        print("Member Id: %s" % cm['crateId'])
+
+    assert len(ldaca.collection_members) > 0
+
+
+def test_get_a_member():
+    global member
+    member = ldaca.collection_members[0]
+    mId = ldaca.crate.dereference(member['crateId'])
+    assert mId == member['crateId']
 
