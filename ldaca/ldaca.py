@@ -48,6 +48,9 @@ class LDaCA:
         self.text_files = []
         self.pandas_dataframe = pandas.DataFrame()
 
+    def set_collection(self, collection):
+        self.collection = collection
+
     def set_data_dir(self, data_dir):
         self.data_dir = data_dir
 
@@ -67,7 +70,7 @@ class LDaCA:
             raise SystemExit("collection_type 'collection' or 'object' required")
 
     def get_collection(self, *args, **kwargs):
-        self.collection = kwargs['collection']
+        self.set_collection(kwargs['collection'])
         self.set_collection_type(kwargs['collection_type'])
         self.set_data_dir(kwargs['data_dir'])
         response = requests.get(self.url + '/auth/memberships', headers={'Authorization': 'Bearer %s' % self.token})
@@ -76,12 +79,6 @@ class LDaCA:
         else:
             saved = self.download_metadata(self.data_dir)
             return saved
-
-    # This is just used for testing the metadata and downloading files. Or in the case the user
-    # doesnt want to download the metadata again
-    def set_collection(self, collection, collection_type):
-        self.collection = collection
-        self.set_collection_type(collection_type)
 
     def download_metadata(self, data_dir):
         # Downloading the metadata saves in memory information about the specific collection
@@ -93,7 +90,7 @@ class LDaCA:
         # Pass resolve-links to expand sydney speaks distributed metadata into one single metadata file
         params['resolve-links'] = True
 
-        col_response = requests.get(self.url + '/data', params=params)
+        col_response = requests.get(self.url + '/api/data', params=params)
         metadata = col_response.json()
         self.get_members_of_collection()
 
@@ -112,7 +109,7 @@ class LDaCA:
         params = dict()
         params['conformsTo'] = self.collection_type
         params['memberOf'] = self.collection
-        response = requests.get(self.url + '/data', params=params)
+        response = requests.get(self.url + '/api/data', params=params)
         conforms = response.json()
         if conforms['total'] > 0:
             self.set_collection_members(conforms['data'])

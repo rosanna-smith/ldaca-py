@@ -8,7 +8,7 @@ Example:
 from ldaca.ldaca import LDaCA
 ldaca = LDaCA(url='https://ldaca.api.url/api', token='my-token-12-34')
 # Saves the metadata in the data_dir
-ldaca.get_collection('arcp://name,my-corpus/corpus/root', collection_type='Collection', data_dir='data')
+ldaca.get_collection(collection='arcp://name,my-corpus/corpus/root', collection_type='Collection', data_dir='data')
 ```
 
 Then select a particular corpus and store it in a pandas dataFrame

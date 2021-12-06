@@ -12,7 +12,9 @@ global member
 
 def test_store_all_data():
     ldaca = LDaCA(url=URL, token=API_TOKEN)
-    ldaca.set_collection(COLLECTION, 'Collection')
+    ldaca.set_collection(COLLECTION)
+    ldaca.set_collection_type('Collection')
+
     ldaca.set_crate()
     ldaca.get_members_of_collection()
     member = ldaca.collection_members[1]
