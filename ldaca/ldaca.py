@@ -16,6 +16,7 @@ def basic_file_picker(file_metadata_json):
 
 def clear_files(files_dir):
     if os.path.exists(files_dir):
+        print('Clearing LDaCA helper "%s" folder' % files_dir)
         for filename in os.listdir(files_dir):
             file_path = os.path.join(files_dir, filename)
             try:
@@ -170,7 +171,8 @@ class LDaCA:
         if len(self.text_files) > 0:
             columns = self.get_columns(self.text_files[0]['csvw:tableSchema']['@id'])
             self.pandas_dataframe = pandas.DataFrame(columns=columns)
-            clear_files(self.data_dir + '/files')
+            # Todo: Pass in store_data an optional delete or confirmation
+            clear_files(self.data_dir + '/ldaca_files')
             for text_file in self.text_files:
                 self.get_columns(text_file['csvw:tableSchema']['@id'])
                 pd = pandas.read_csv(
