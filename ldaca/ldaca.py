@@ -172,7 +172,8 @@ class LDaCA:
             columns = self.get_columns(self.text_files[0]['csvw:tableSchema']['@id'])
             self.pandas_dataframe = pandas.DataFrame(columns=columns)
             # Todo: Pass in store_data an optional delete or confirmation
-            clear_files(self.data_dir + '/ldaca_files')
+            ldaca_files_folder = self.data_dir + '/ldaca_files'
+            clear_files(ldaca_files_folder)
             for text_file in self.text_files:
                 self.get_columns(text_file['csvw:tableSchema']['@id'])
                 pd = pandas.read_csv(
@@ -186,7 +187,7 @@ class LDaCA:
                 else:
                     # If it doesnt have a name:
                     name = str(uuid.uuid4()) + '.csv'
-                pd.to_csv(self.data_dir + '/files/' + name)
+                pd.to_csv(ldaca_files_folder + '/' + name)
         else:
             return "No files"
 
