@@ -11,7 +11,7 @@ pip install ldaca@git+https://github.com/Language-Research-Technology/ldaca-py.g
 For accessing files you will need to get a token. To get a token go to ldaca website and generate a token in the user
 area Example:
 
-### Load the modules and instanciate an LDaCA 
+### Load the modules and instanciate an LDaCA
 
 ```python
 from ldaca.ldaca import LDaCA
@@ -58,7 +58,12 @@ and:
 ldaca.store_data(
     sub_collection='arcp://name,my-corpus/subcorpus/subcorpusname',
     entity_type='DialogueText',
-    file_picker=my_other_file_picker)
+    file_picker=my_other_file_picker,
+    ldaca_files='ldaca_files')
 ldaca.pandas_dataframe
 ```
+
+This will store the data from 'arcp://name,my-corpus/subcorpus/subcorpusname' using my_other_fule_picker into a pandas
+dataframe. It will also store it in under `data_dir` set in get_collection and under `ldaca_files` folder for reference
+**(Beware, this folder will be deleted everytime store_data gets called)**
 

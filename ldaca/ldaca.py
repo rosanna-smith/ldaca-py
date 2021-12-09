@@ -50,6 +50,7 @@ class LDaCA:
         self.pandas_dataframe = pandas.DataFrame()
         self.collection = None
         self.membership = []
+        self.ldaca_files_path = 'ldaca_files'
 
     def set_collection(self, collection):
         self.collection = collection
@@ -125,6 +126,9 @@ class LDaCA:
 
     def store_data(self, *args, **kwargs):  # sub_collection, entity_type='DialogueText'):
         col = self.crate.dereference(kwargs['sub_collection'])
+        # Optional store the ldaca_files in a specific folder under self.data_dir
+        if 'ldaca_files' in kwargs:
+            self.ldaca_files_path = kwargs['ldaca_files']
         dialogues = []
         for entity in self.crate.contextual_entities:
             entity_list = as_list(entity.type)
@@ -172,7 +176,7 @@ class LDaCA:
             columns = self.get_columns(self.text_files[0]['csvw:tableSchema']['@id'])
             self.pandas_dataframe = pandas.DataFrame(columns=columns)
             # Todo: Pass in store_data an optional delete or confirmation
-            ldaca_files_folder = self.data_dir + '/ldaca_files'
+            ldaca_files_folder = os.path.join(self.data_dir, self.ldaca_files_path)
             clear_files(ldaca_files_folder)
             for text_file in self.text_files:
                 self.get_columns(text_file['csvw:tableSchema']['@id'])
@@ -187,7 +191,8 @@ class LDaCA:
                 else:
                     # If it doesnt have a name:
                     name = str(uuid.uuid4()) + '.csv'
-                pd.to_csv(ldaca_files_folder + '/' + name)
+                pandas_to_csv_path = os.path.join(ldaca_files_folder, name)
+                pd.to_csv(pandas_to_csv_path)
         else:
             return "No files"
 
@@ -213,7 +218,7 @@ class LDaCA:
     # Just as test : Loads all local files into a dataframe
     def load_local_files(self):
 
-        all_files = glob.glob(self.data_dir + "/*.csv")
+        all_files = glob.glob(self.data_dir + '/' + self.ldaca_files_path + '/*.csv')
         pdl = []
 
         for filename in all_files:

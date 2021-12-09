@@ -4,7 +4,7 @@ import os
 
 load_dotenv('../.env')
 API_TOKEN = os.getenv('API_KEY')
-URL = os.getenv('URL')
+URL = os.getenv('HOST')
 COLLECTION = os.getenv('COLLECTION')
 global ldaca
 global member

@@ -4,7 +4,7 @@ import os
 
 load_dotenv('../.env')
 API_TOKEN = os.getenv('API_KEY')
-URL = os.getenv('URL')
+URL = os.getenv('HOST')
 COLLECTION = os.getenv('COLLECTION')
 global ldaca
 global member
@@ -18,7 +18,7 @@ def test_store_all_data():
     ldaca.set_crate()
     ldaca.get_members_of_collection()
     member = ldaca.collection_members[1]
-    ldaca.store_data(sub_collection=member['crateId'], entity_type='DialogueText')
+    ldaca.store_data(sub_collection=member['crateId'], entity_type='DialogueText', ldaca_files='ldaca_files')
     ldaca.pandas_dataframe.to_csv(ldaca.data_dir + '/pd.csv')
 
     assert ldaca.pandas_dataframe.values.size > 0
