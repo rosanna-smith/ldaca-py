@@ -18,7 +18,7 @@ from ldaca.ldaca import LDaCA
 
 ldaca = LDaCA(url='https://ldaca.api.url/api', token='my-token-12-34')
 # Saves the metadata in the data_dir
-ldaca.get_collection(
+ldaca.retrieve_collection(
     collection='arcp://name,my-corpus/corpus/root',
     collection_type='Collection',
     data_dir='data')
@@ -27,43 +27,46 @@ ldaca.get_collection(
 You can find the members of your selected collection by doing:
 
 ```python
-members = ldaca.get_members_of_collection()
+ldaca.retrieve_members_of_collection()
+member = ldaca.collection_members[1]
 ```
 
-Then select a particular corpus and store it in a pandas dataFrame
+Use a file_picker function
 
 ```python
-# Stores data into a pandas dataframe
-ldaca.store_data(
-    sub_collection='arcp://name,my-corpus/subcorpus/subcorpusname',
-    entity_type='DialogueText')
-ldaca.pandas_dataframe
+my_file_picker = lambda f: f if f.get('encodingFormat') == 'text/csv' else None
 ```
 
-Optional: you can pass a file_picker function
-
-```python
-my_file_picker = lambda f: f if f['encodingFormat'] == 'text/csv' else None 
-```
-
-or
-
-```python
-my_other_file_picker = lambda f: f if 'OrthographicTranscription' in f['@type'] else None
-```
-
-and:
-
-```python
-ldaca.store_data(
-    sub_collection='arcp://name,my-corpus/subcorpus/subcorpusname',
-    entity_type='DialogueText',
-    file_picker=my_other_file_picker,
-    ldaca_files='ldaca_files')
-ldaca.pandas_dataframe
-```
-
-This will store the data from 'arcp://name,my-corpus/subcorpus/subcorpusname' using my_other_fule_picker into a pandas
-dataframe. It will also store it in under `data_dir` set in get_collection and under `ldaca_files` folder for reference
+Then select a particular corpus `sub_collection` and store it in a folder
 **(Beware, this folder will be deleted everytime store_data gets called)**
 
+```python
+ldaca.store_data(
+    sub_collection=member['crateId'], 
+    entity_type='RepositoryObject', 
+    ldaca_files='ldaca_files', 
+    file_picker=my_file_picker, 
+    extension='csv')
+```
+
+Example:
+
+```python
+ldaca = LDaCA(url='https://ldaca.api.url/api', token='my-token-12-34', data_dir='atomic_data')
+
+ldaca.retrieve_collection(
+    collection='arcp://name,my-corpus/corpus/root',
+    collection_type='Collection',
+    data_dir='atomic_data')
+```
+```python
+my_file_picker = lambda f: f if f.get('encodingFormat') == 'text/csv' else None
+```
+```python
+ldaca.store_data(
+    entity_type='RepositoryObject', 
+    ldaca_files='ldaca_files', 
+    file_picker=my_file_picker, 
+    extension='csv'
+)
+```

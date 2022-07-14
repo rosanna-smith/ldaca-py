@@ -10,8 +10,10 @@ import logging
 
 
 def basic_file_picker(file_metadata_json):
-    if file_metadata_json['encodingFormat'] == 'text/csv':
+    if file_metadata_json.get('encodingFormat') == 'text/csv':
         return file_metadata_json
+    else:
+        return None
 
 
 def clear_files(files_dir):
