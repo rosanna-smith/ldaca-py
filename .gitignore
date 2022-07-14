@@ -2,6 +2,8 @@ venv
 .env
 .pytest_cache
 test/data/*
+test/atomic_data/*
+test/fragmented_data/*
 test/test_data
 !test/data/.gitkeep
 .idea
