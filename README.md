@@ -11,7 +11,11 @@ pip install ldaca@git+https://github.com/Language-Research-Technology/ldaca-py.g
 For accessing files you will need to get a token. To get a token go to ldaca website and generate a token in the user
 area Example:
 
-### Load the modules and instanciate an LDaCA
+### Load the modules and instantiate an LDaCA
+
+Example 1:
+
+Retrieve a set of files from a fragmented collection
 
 ```python
 from ldaca.ldaca import LDaCA
@@ -24,20 +28,21 @@ ldaca.retrieve_collection(
     data_dir='data')
 ```
 
-You can find the members of your selected collection by doing:
+Find the sub_collections of such collection
 
 ```python
 ldaca.retrieve_members_of_collection()
 member = ldaca.collection_members[1]
 ```
 
-Use a file_picker function
+Use a file_picker function, to select only the desired files
 
 ```python
 my_file_picker = lambda f: f if f.get('encodingFormat') == 'text/csv' else None
 ```
 
-Then select a particular corpus `sub_collection` and store it in a folder
+Then select a particular corpus `sub_collection` and store it in a folder. Select the `entity_type`, in this case 'RepositoryObject'
+
 **(Beware, this folder will be deleted everytime store_data gets called)**
 
 ```python
@@ -49,7 +54,11 @@ ldaca.store_data(
     extension='csv')
 ```
 
-Example:
+All files should be downloaded into `data/ldaca_files`
+
+Example 2:
+
+Download files from an atomic collection 
 
 ```python
 ldaca = LDaCA(url='https://ldaca.api.url/api', token='my-token-12-34', data_dir='atomic_data')
@@ -59,9 +68,15 @@ ldaca.retrieve_collection(
     collection_type='Collection',
     data_dir='atomic_data')
 ```
+
+Use a file_picker function, to select only the desired files
+
 ```python
 my_file_picker = lambda f: f if f.get('encodingFormat') == 'text/csv' else None
 ```
+
+Select the `entity_type`, in this case 'RepositoryObject'
+
 ```python
 ldaca.store_data(
     entity_type='RepositoryObject', 
@@ -70,3 +85,5 @@ ldaca.store_data(
     extension='csv'
 )
 ```
+
+All files should be downloaded into `atomic_data/ldaca_files`
