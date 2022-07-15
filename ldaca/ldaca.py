@@ -3,13 +3,18 @@ import os
 import json
 from rocrate_lang.rocrate_plus import ROCratePlus
 from rocrate_lang.utils import as_list
-import pandas
 import shutil
 import uuid
 import logging
+import glob
 
 
 def basic_file_picker(file_metadata_json):
+    """
+    Default file picker
+    :param file_metadata_json:
+    :return:
+    """
     if file_metadata_json.get('encodingFormat') == 'text/csv':
         return file_metadata_json
     else:
@@ -17,8 +22,13 @@ def basic_file_picker(file_metadata_json):
 
 
 def clear_files(files_dir):
+    """
+    Clear all files from files_dir
+    :param files_dir: files path inside data_dir
+    :return:
+    """
     if os.path.exists(files_dir):
-        print('Clearing LDaCA helper "%s" folder' % files_dir)
+        logging.info(f"Clearing LDaCA helper {files_dir} folder")
         for filename in os.listdir(files_dir):
             file_path = os.path.join(files_dir, filename)
             try:
@@ -38,21 +48,29 @@ class LDaCA:
     """
     BASE_PROFILE = "https://purl.archive.org/textcommons/profile"
 
-    def __init__(self, *args, **kwargs):
-        if 'data_dir' in kwargs:
-            self.data_dir = kwargs['data_dir']
-        else:
+    def __init__(self, url: str, token: str, data_dir=None):
+        """
+        Constructor of LDaCA
+        :param url: ldaca api url example: https://ldaca.api.url/api
+        :param token: generated in ldaca web
+        :param data_dir: base data directory
+        """
+        if not data_dir:
             self.data_dir = 'data'
-        self.url = kwargs['url']
-        self.token = kwargs['token']
+        else:
+            self.data_dir = data_dir
+        self.url = url
+        self.token = token
         self.crate = None
         self.collection_type = None
         self.collection_members = None
         self.text_files = []
-        self.pandas_dataframe = pandas.DataFrame()
         self.collection = None
         self._membership = []
         self.ldaca_files_path = 'ldaca_files'
+
+    def set_base_profile(self, profile):
+        self.BASE_PROFILE = profile
 
     def set_collection(self, collection):
         self.collection = collection
@@ -83,27 +101,39 @@ class LDaCA:
     def membership(self, membership):
         self._membership = membership
 
-    def retrieve_collection(self, *args, **kwargs):
-        self.set_collection(kwargs['collection'])
-        self.set_collection_type(kwargs['collection_type'])
-        self.set_data_dir(kwargs['data_dir'])
+    def retrieve_collection(self, collection: str, collection_type: str, data_dir: str):
+        """
+        Will retrieve the collection metadata in the selected data_dir and set the crate
+        :param args:
+        :param collection: The id of the collection
+        :param collection_type: Can be either Collection or Object
+        :param data_dir: set the data directory
+        :return:
+        """
+        self.set_collection(collection)
+        self.set_collection_type(collection_type)
+        self.set_data_dir(data_dir)
         response = requests.get(self.url + '/auth/memberships', headers={'Authorization': 'Bearer %s' % self.token})
         if response.status_code != 200:
-            raise SystemExit("The API_KEY you provided is not correct or not authorized to access this collection")
+            raise ValueError("The API_KEY you provided is not correct or not authorized to access this collection")
         else:
             self.membership = response.json()
-            saved = self.retrieve_metadata(self.data_dir)
+            self.retrieve_metadata(self.data_dir)
             self.set_crate()
-            return saved
+            logging.info(f"Saved crate in {self.crate}")
 
     def retrieve_metadata(self, data_dir):
-        # Downloading the metadata saves in memory information about the specific collection
-        # use retrieve_collection to reset them.
+        """
+        Downloading the metadata saves in memory information about the specific collection
+        use retrieve_collection to reset them.
+        :param data_dir:
+        :return:
+        """
         if data_dir:
             self.set_data_dir(data_dir)
         params = dict()
         params['id'] = self.collection
-        # Pass resolve-links to expand sydney speaks distributed metadata into one single metadata file
+        # Pass resolve-links to expand the collection distributed metadata into one single ro-crate-metadata file
         params['resolve-parts'] = True
 
         response = requests.get(self.url + '/object/meta', params=params)
@@ -118,10 +148,12 @@ class LDaCA:
         # Save it into a file
         with open(self.data_dir + '/ro-crate-metadata.json', 'w', encoding='utf-8') as f:
             json.dump(metadata, f, ensure_ascii=False, indent=4)
-            return self.data_dir
 
     def retrieve_members_of_collection(self):
-        # Pass conformsTo and memberOf to find out members of this collection
+        """
+        Retrieves the members of the collection sending conformsTo and memberOf to find out if there are sub collections
+        :return:
+        """
         params = dict()
         params['conformsTo'] = self.collection_type
         params['memberOf'] = self.collection
@@ -130,24 +162,33 @@ class LDaCA:
         if conforms['total'] > 0:
             self.set_collection_members(conforms['data'])
         else:
-            return "this collection does not have members"
+            logging.info(f"This collection {self.collection} does not have members")
 
-    def store_data(self, *args, **kwargs):  # sub_collection, entity_type='DialogueText'):
+    def store_data(self, entity_type: str, extension: str, ldaca_files: str = None, sub_collection: str = None, file_picker = None):
+        """
+        Stores data inside data_dir/ldaca_files filtered by entity_type
+        :param entity_type: Filter objects in collection by entity_type
+        :param extension: select extension to be saved as
+        :param ldaca_files: Directory inside data_dir to place files
+        :param sub_collection: if set get only the sub collection members
+        :param file_picker: function to send to filter files from the metadata file
+        :return: @TODO return list of files
+        """
         is_sub_collection = False
-        if 'sub_collection' in kwargs:
-            is_sub_collection = True
-            col = self.crate.dereference(kwargs['sub_collection'])
-            if not col:
-                raise ValueError('Cannot find sub_collection {}', format(kwargs['sub_collection']))
-        else:
+        if not sub_collection:
             col = self.crate.dereference(self.collection)
-        # Optional store the ldaca_files in a specific folder under self.data_dir
-        if 'ldaca_files' in kwargs:
-            self.ldaca_files_path = kwargs['ldaca_files']
+        else:
+            is_sub_collection = True
+            col = self.crate.dereference(sub_collection)
+            if not col:
+                raise ValueError(f"Cannot find sub_collection {sub_collection}")
+
+        if ldaca_files:
+            self.ldaca_files_path = ldaca_files
         dialogues = []
         for entity in self.crate.contextual_entities + self.crate.data_entities:
             entity_list = as_list(entity.type)
-            if kwargs['entity_type'] in entity_list:
+            if entity_type in entity_list:
                 dialogues.append(entity.as_jsonld())
 
         # get me all the members of collection that are members of subcollection
@@ -169,21 +210,28 @@ class LDaCA:
                 dialogue = col_dialogue.as_jsonld()
                 files = as_list(dialogue.get('hasPart'))
                 # file_picker is a function that can be passed otherwise a basic one is used
-                if 'file_picker' in kwargs:
-                    file_picker = kwargs['file_picker']
-                else:
+                if not file_picker:
                     file_picker = basic_file_picker
+                else:
+                    file_picker = file_picker
                 self.append_if_text(files, file_picker)
-            extension = kwargs.get('extension')
             if not extension:
-                raise SystemError('no extension provided')
+                raise ValueError("No extension provided")
             else:
                 self.download_filtered_files(extension=extension)
-                return "Found %d files" % len(self.text_files)
+                all_files = glob.glob(os.path.join(self.data_dir, self.ldaca_files_path + '/*.csv'))
+                logging.info(f"Found {len(self.text_files)} files")
+                return all_files
         else:
-            raise ValueError("No entities of type %s found in %s " % (col.id, kwargs['entity_type']))
+            raise ValueError("No entities of type %s found in %s " % (col.id, entity_type))
 
     def append_if_text(self, files, file_picker):
+        """
+        Append filtered files to text_files
+        :param files: ids of files list
+        :param file_picker: file_picker function
+        :return:
+        """
         for file in files:
             file_crate = self.crate.dereference(file['@id'])
             file_crate_json = file_crate.as_jsonld()
@@ -191,10 +239,12 @@ class LDaCA:
             if filtered_file:
                 self.text_files.append(filtered_file)
 
-    # This uses pandas to store files in memory for analysis.
-    # TODO: create other options of downloading files
     def download_filtered_files(self, extension):
-        # Clear
+        """
+        Downloads all files selected into the ldaca_files_path folder
+        :param extension: file name extension to be saved as
+        :return:
+        """
         if len(self.text_files) > 0:
             # Todo: Pass in store_data an optional delete or confirmation
             ldaca_files_folder = os.path.join(self.data_dir, self.ldaca_files_path)
@@ -208,20 +258,27 @@ class LDaCA:
                     name = str(uuid.uuid4()) + '.' + extension
                 self.download_file(text_file['@id'], file_path=os.path.join(ldaca_files_folder, name))
         else:
-            # No files found
+            logging.info("No files to download")
             return None
 
     def download_file(self, url, file_path):
+        """
+        Use requests to download file from URL
+        :param url:
+        :param file_path:
+        :return:
+        """
         if not file_path:
-            raise ValueError('No file_path provided')
+            raise ValueError("No file_path provided")
         try:
             with requests.get(url, stream=True, headers={'Authorization': 'Bearer ' + self.token}) as response:
                 response.raise_for_status()
                 with open(file_path, 'wb') as out_file:
                     for chunk in response.iter_content(chunk_size=1024 * 1024):  # 1MB chunks
                         out_file.write(chunk)
-                logging.info('Download finished successfully')
+                logging.info("Download finished successfully")
                 return file_path
         except Exception as e:
-            logging.error(f'Trying to download failed with error: {e}')
+            logging.error(f"Trying to download failed with error: {e}")
+            raise e
 
