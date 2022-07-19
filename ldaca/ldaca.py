@@ -113,14 +113,21 @@ class LDaCA:
         self.set_collection(collection)
         self.set_collection_type(collection_type)
         self.set_data_dir(data_dir)
-        response = requests.get(self.url + '/auth/memberships', headers={'Authorization': 'Bearer %s' % self.token})
-        if response.status_code != 200:
-            raise ValueError("The API_KEY you provided is not correct or not authorized to access this collection")
-        else:
-            self.membership = response.json()
-            self.retrieve_metadata(self.data_dir)
-            self.set_crate()
-            logging.info(f"Saved crate in {self.crate}")
+        try:
+            response = requests.get(self.url + '/auth/memberships', headers={'Authorization': 'Bearer %s' % self.token})
+            if response.status_code != 200:
+                logging.error(f"Request failed for access collection {collection} with error {response.reason}")
+                if response.text:
+                    logging.error(f"{response.text}")
+                raise ValueError(response.reason)
+            else:
+                self.membership = response.json()
+                self.retrieve_metadata(self.data_dir)
+                self.set_crate()
+                logging.info(f"Saved crate in {self.crate}")
+        except requests.exceptions.RequestException as e:
+            logging.error(e)
+            raise e
 
     def retrieve_metadata(self, data_dir):
         """
@@ -164,7 +171,8 @@ class LDaCA:
         else:
             logging.info(f"This collection {self.collection} does not have members")
 
-    def store_data(self, entity_type: str, extension: str, ldaca_files: str = None, sub_collection: str = None, file_picker = None):
+    def store_data(self, entity_type: str, extension: str, ldaca_files: str = None, sub_collection: str = None,
+                   file_picker=None):
         """
         Stores data inside data_dir/ldaca_files filtered by entity_type
         :param entity_type: Filter objects in collection by entity_type
@@ -172,7 +180,7 @@ class LDaCA:
         :param ldaca_files: Directory inside data_dir to place files
         :param sub_collection: if set get only the sub collection members
         :param file_picker: function to send to filter files from the metadata file
-        :return: @TODO return list of files
+        :return: list of files paths
         """
         is_sub_collection = False
         if not sub_collection:
@@ -281,4 +289,3 @@ class LDaCA:
         except Exception as e:
             logging.error(f"Trying to download failed with error: {e}")
             raise e
-

@@ -1,7 +1,6 @@
 from ldaca.ldaca import LDaCA
 from dotenv import load_dotenv
 import os
-import glob
 
 load_dotenv('../.env')
 API_TOKEN = os.getenv('API_KEY')

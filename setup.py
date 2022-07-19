@@ -6,7 +6,7 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
     required = f.read().splitlines()
 
-version = 'v0.0.4'
+version = 'v0.0.5'
 
 setup(
     name='ldaca',
@@ -14,7 +14,7 @@ setup(
     version=version,
     description='LDaCA API Wrapper',
     author=", ".join((
-        'Moises Sacal'
+        'Moises Sacal Bonequi'
     )),
     python_requires='>=3.6',
     license="gplv2",
