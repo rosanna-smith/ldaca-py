@@ -288,4 +288,3 @@ class LDaCA:
                 return file_path
         except Exception as e:
             logging.error(f"Trying to download failed with error: {e}")
-            raise e
