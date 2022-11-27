@@ -46,7 +46,7 @@ class LDaCA:
     """
     An LDaCA ReST API wrapper
     """
-    BASE_PROFILE = "https://purl.archive.org/textcommons/profile"
+    BASE_PROFILE = "https://purl.archive.org/language-data-commons/profile"
 
     def __init__(self, url: str, token: str, data_dir=None):
         """
