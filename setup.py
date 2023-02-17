@@ -6,7 +6,7 @@ here = path.abspath(path.dirname(__file__))
 with open(path.join(here, 'requirements.txt'), encoding='utf-8') as f:
     required = f.read().splitlines()
 
-version = 'v0.0.5'
+version = 'v1.0.0'
 
 setup(
     name='ldaca',

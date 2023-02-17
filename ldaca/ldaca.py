@@ -144,8 +144,15 @@ class LDaCA:
         params['resolve-parts'] = True
 
         response = requests.get(self.url + '/object/meta', params=params)
+        logging.debug(response.request.url)
         collection = response.json()
-        metadata = collection.get('data')
+        if collection.get('error'):
+            raise ValueError("There was an error trying to get metadata from API")
+        if collection.get('data'):
+            metadata = collection.get('data')  # this is to stay compatible with older versions of the Oni API
+        else:
+            metadata = collection
+
         self.retrieve_members_of_collection()
 
         # Create a data directory to store our downloaded metadata file
@@ -165,6 +172,8 @@ class LDaCA:
         params['conformsTo'] = self.collection_type
         params['memberOf'] = self.collection
         response = requests.get(self.url + '/object', params=params)
+        request_url = response.request.url
+        logging.debug(request_url)
         conforms = response.json()
         if conforms['total'] > 0:
             self.set_collection_members(conforms['data'])
@@ -206,10 +215,9 @@ class LDaCA:
             dialogue = self.crate.dereference(d['@id'])
             dialogue_json = dialogue.as_jsonld()
             if is_sub_collection:
-                for member in dialogue_json['memberOf']:
-                    col_id = col.get('@id')
-                    if col_id in member['@id']:
-                        collection_dialogues.append(dialogue)
+                member = dialogue_json.get('memberOf')
+                if member['@id']:
+                    collection_dialogues.append(dialogue)
             else:
                 collection_dialogues.append(dialogue)
         if len(collection_dialogues) > 0:
