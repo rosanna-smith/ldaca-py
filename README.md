@@ -87,3 +87,50 @@ ldaca.store_data(
 ```
 
 All files should be downloaded into `atomic_data/ldaca_files`
+
+### Developer Documentation
+
+Creat virtual environment:
+Create a venv with python 3. Minimum python version is 3.6
+    * python3 -m venv venv
+    * source venv/bin/activate (Mac OS/Linux) / venv/Scripts/activate (Windows)
+    * pip install -r requirements.txt
+    * Then run example runs as listed above
+
+#### For testing create a .env file in the folder above
+
+With
+```shell
+HOST='https://data.ldaca.edu.au/api'
+API_KEY=my-key-12-34
+COLLECTION_ATOMIC='my-id'  #e.g.'arcp://name,doi10.4225%2F35%2F555d661071c76'
+COLLECTION_FRAGMENTED='my-id'  #e.g.'arcp://name,doi10.25949%2F24769173.v1'
+BASE_PROFILE='collection-base-profile'  #e.g.https://w3id.org/ldac/profile'
+```
+
+#### API_KEY
+To get an API key:
+- Login to data.ldaca.edu.au
+- Under your name, select User Information
+- Under API Key, select Generate
+
+#### COLLECTION
+Both an atomic and a fragmented collection ID are required for the tests. Atomic collections are those without sub-collections (e.g. Farms to Freeways Example Dataset), whereas fragmented collections may be made up of multiple sub-collections (e.g. International Corpus of English (ICE-AUS)).
+
+The following tests require an atomic collection:
+- test_atomic_data.py
+
+The following tests require a fragmented collection:
+- test_init.py
+- test_fragmented.data.py
+
+#### BASE_PROFILE
+
+This can be obtained by right-clicking the ConformsTo icon in the portal and copying the link. Don't include #Collection at the end of the base profile link in the .env file.
+
+#### RUNNING TESTS
+
+When running the tests:
+- Change directories to test/ first
+- This ensures your .env file is picked up correctly
+- To run test use the command pytest

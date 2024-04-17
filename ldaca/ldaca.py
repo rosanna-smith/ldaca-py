@@ -46,7 +46,7 @@ class LDaCA:
     """
     An LDaCA ReST API wrapper
     """
-    BASE_PROFILE = "https://purl.archive.org/language-data-commons/profile"
+    BASE_PROFILE = "https://w3id.org/ldac/profile"
 
     def __init__(self, url: str, token: str, data_dir=None):
         """
@@ -216,8 +216,9 @@ class LDaCA:
             dialogue_json = dialogue.as_jsonld()
             if is_sub_collection:
                 member = dialogue_json.get('memberOf')
-                if member['@id']:
-                    collection_dialogues.append(dialogue)
+                if member is not None:
+                    if member.get('@id'):
+                        collection_dialogues.append(dialogue)
             else:
                 collection_dialogues.append(dialogue)
         if len(collection_dialogues) > 0:
@@ -227,9 +228,11 @@ class LDaCA:
                 files = as_list(dialogue.get('hasPart'))
                 # file_picker is a function that can be passed otherwise a basic one is used
                 if not file_picker:
+                    logging.info('I\'m not using the file picker')
                     file_picker = basic_file_picker
                 else:
                     file_picker = file_picker
+                    print('I\'m using the file picker')
                 self.append_if_text(files, file_picker)
             if not extension:
                 raise ValueError("No extension provided")
@@ -239,7 +242,9 @@ class LDaCA:
                 logging.info(f"Found {len(self.text_files)} files")
                 return all_files
         else:
-            raise ValueError("No entities of type %s found in %s " % (col.id, entity_type))
+            logging.warning("No entities of type %s found in %s " % (col.id, entity_type))
+            all_files = []
+            return all_files
 
     def append_if_text(self, files, file_picker):
         """
@@ -277,7 +282,7 @@ class LDaCA:
             logging.info("No files to download")
             return None
 
-    def download_file(self, url, file_path):
+    def download_file(self, url, file_path, DOWNLOAD_DIR=""):
         """
         Use requests to download file from URL
         :param url:
@@ -289,10 +294,17 @@ class LDaCA:
         try:
             with requests.get(url, stream=True, headers={'Authorization': 'Bearer ' + self.token}) as response:
                 response.raise_for_status()
-                with open(file_path, 'wb') as out_file:
+                #ensure directory exists
+                download_path = os.path.join(DOWNLOAD_DIR, file_path)
+                dir = os.path.dirname(download_path)
+                if dir and not os.path.exists(dir):
+                    print("Creating directory:",dir)
+                    os.makedirs(dir)
+                
+                with open(download_path, 'wb') as out_file:
                     for chunk in response.iter_content(chunk_size=1024 * 1024):  # 1MB chunks
                         out_file.write(chunk)
                 logging.info("Download finished successfully")
-                return file_path
+                return download_path
         except Exception as e:
             logging.error(f"Trying to download failed with error: {e}")

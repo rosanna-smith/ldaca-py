@@ -6,6 +6,7 @@ load_dotenv('../.env')
 API_TOKEN = os.getenv('API_KEY')
 URL = os.getenv('HOST')
 COLLECTION = os.getenv('COLLECTION_ATOMIC')
+print(f"URL: {URL}")
 global ldaca
 global member
 
