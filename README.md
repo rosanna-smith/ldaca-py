@@ -50,9 +50,11 @@ ldaca.store_data(
     sub_collection=member['crateId'], 
     entity_type='RepositoryObject', 
     ldaca_files='ldaca_files', 
-    file_picker=my_file_picker, 
-    extension='csv')
+    file_picker=my_file_picker)
 ```
+
+If you don't specify a file picker, it will download all files by default.
+For example, if you only want to download part of the ICE collection, you would specify a file picker.
 
 All files should be downloaded into `data/ldaca_files`
 
@@ -81,8 +83,7 @@ Select the `entity_type`, in this case 'RepositoryObject'
 ldaca.store_data(
     entity_type='RepositoryObject', 
     ldaca_files='ldaca_files', 
-    file_picker=my_file_picker, 
-    extension='csv'
+    file_picker=my_file_picker 
 )
 ```
 

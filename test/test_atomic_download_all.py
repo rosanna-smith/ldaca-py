@@ -11,7 +11,7 @@ global ldaca
 global member
 
 
-def test_store_all_csv():
+def test_store_all_data():
     global ldaca
     data_dir = 'atomic_data'
     ldaca = LDaCA(url=URL, token=API_TOKEN, data_dir=data_dir)
@@ -23,8 +23,7 @@ def test_store_all_csv():
         collection_type='Collection',
         data_dir=data_dir)
 
-    my_file_picker = lambda f: f if f.get('encodingFormat') == 'text/csv' else None
-    all_files = ldaca.store_data(entity_type='RepositoryObject', ldaca_files='ldaca_files', file_picker=my_file_picker)
+    all_files = ldaca.store_data(entity_type='RepositoryObject', ldaca_files='ldaca_files')
 
-    assert len(all_files) == 34
+    assert len(all_files) == 102
 
