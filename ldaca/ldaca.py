@@ -7,6 +7,7 @@ import shutil
 import uuid
 import logging
 import glob
+from urllib.parse import unquote
 
 
 def basic_file_picker(file_metadata_json):
@@ -46,7 +47,7 @@ class LDaCA:
     """
     An LDaCA ReST API wrapper
     """
-    BASE_PROFILE = "https://purl.archive.org/language-data-commons/profile"
+    BASE_PROFILE = "https://w3id.org/ldac/profile"
 
     def __init__(self, url: str, token: str, data_dir=None):
         """
@@ -180,12 +181,11 @@ class LDaCA:
         else:
             logging.info(f"This collection {self.collection} does not have members")
 
-    def store_data(self, entity_type: str, extension: str, ldaca_files: str = None, sub_collection: str = None,
+    def store_data(self, entity_type: str, ldaca_files: str = None, sub_collection: str = None,
                    file_picker=None):
         """
         Stores data inside data_dir/ldaca_files filtered by entity_type
         :param entity_type: Filter objects in collection by entity_type
-        :param extension: select extension to be saved as
         :param ldaca_files: Directory inside data_dir to place files
         :param sub_collection: if set get only the sub collection members
         :param file_picker: function to send to filter files from the metadata file
@@ -216,8 +216,9 @@ class LDaCA:
             dialogue_json = dialogue.as_jsonld()
             if is_sub_collection:
                 member = dialogue_json.get('memberOf')
-                if member['@id']:
-                    collection_dialogues.append(dialogue)
+                if member is not None:
+                    if member.get('@id'):
+                        collection_dialogues.append(dialogue)
             else:
                 collection_dialogues.append(dialogue)
         if len(collection_dialogues) > 0:
@@ -226,22 +227,16 @@ class LDaCA:
                 dialogue = col_dialogue.as_jsonld()
                 files = as_list(dialogue.get('hasPart'))
                 # file_picker is a function that can be passed otherwise a basic one is used
-                if not file_picker:
-                    file_picker = basic_file_picker
-                else:
-                    file_picker = file_picker
                 self.append_if_text(files, file_picker)
-            if not extension:
-                raise ValueError("No extension provided")
-            else:
-                self.download_filtered_files(extension=extension)
-                all_files = glob.glob(os.path.join(self.data_dir, self.ldaca_files_path + '/*.csv'))
-                logging.info(f"Found {len(self.text_files)} files")
-                return all_files
+            self.download_filtered_files()
+            logging.info(f"Found {len(self.text_files)} files")
+            return self.text_files
         else:
-            raise ValueError("No entities of type %s found in %s " % (col.id, entity_type))
+            logging.warning("No entities of type %s found in %s " % (col.id, entity_type))
+            all_files = []
+            return all_files
 
-    def append_if_text(self, files, file_picker):
+    def append_if_text(self, files, file_picker = None):
         """
         Append filtered files to text_files
         :param files: ids of files list
@@ -251,14 +246,16 @@ class LDaCA:
         for file in files:
             file_crate = self.crate.dereference(file['@id'])
             file_crate_json = file_crate.as_jsonld()
-            filtered_file = file_picker(file_crate_json)
-            if filtered_file:
-                self.text_files.append(filtered_file)
+            if not file_picker:
+                self.text_files.append(file)
+            else:
+                filtered_file = file_picker(file_crate_json)
+                if filtered_file:
+                    self.text_files.append(filtered_file)
 
-    def download_filtered_files(self, extension):
+    def download_filtered_files(self):
         """
         Downloads all files selected into the ldaca_files_path folder
-        :param extension: file name extension to be saved as
         :return:
         """
         if len(self.text_files) > 0:
@@ -266,18 +263,18 @@ class LDaCA:
             ldaca_files_folder = os.path.join(self.data_dir, self.ldaca_files_path)
             clear_files(ldaca_files_folder)
             for text_file in self.text_files:
-                # Save it to a file while we are here
-                if text_file['name']:
-                    name = text_file['name'].replace(' ', '_') + '.' + extension
-                else:
-                    # If it doesnt have a name:
-                    name = str(uuid.uuid4()) + '.' + extension
-                self.download_file(text_file['@id'], file_path=os.path.join(ldaca_files_folder, name))
+                try:
+                    file_path = text_file['@id'].split('&path=')[1]
+                    file_path_decoded = unquote(file_path)
+                    file_path_array = file_path_decoded.split('/')
+                    self.download_file(text_file['@id'], file_path=os.path.join(ldaca_files_folder, *file_path_array))
+                except UnicodeDecodeError as e:
+                    logging.error("Error decoding file ID:", e)
         else:
             logging.info("No files to download")
             return None
 
-    def download_file(self, url, file_path):
+    def download_file(self, url, file_path, DOWNLOAD_DIR=""):
         """
         Use requests to download file from URL
         :param url:
@@ -289,10 +286,17 @@ class LDaCA:
         try:
             with requests.get(url, stream=True, headers={'Authorization': 'Bearer ' + self.token}) as response:
                 response.raise_for_status()
-                with open(file_path, 'wb') as out_file:
+                #ensure directory exists
+                download_path = os.path.join(DOWNLOAD_DIR, file_path)
+                dir = os.path.dirname(download_path)
+                if dir and not os.path.exists(dir):
+                    print("Creating directory:",dir)
+                    os.makedirs(dir)
+                
+                with open(download_path, 'wb') as out_file:
                     for chunk in response.iter_content(chunk_size=1024 * 1024):  # 1MB chunks
                         out_file.write(chunk)
                 logging.info("Download finished successfully")
-                return file_path
+                return download_path
         except Exception as e:
             logging.error(f"Trying to download failed with error: {e}")

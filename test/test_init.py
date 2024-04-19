@@ -5,7 +5,7 @@ import os
 load_dotenv('../.env')
 API_TOKEN = os.getenv('API_KEY')
 URL = os.getenv('HOST')
-COLLECTION = os.getenv('COLLECTION')
+COLLECTION = os.getenv('COLLECTION_FRAGMENTED')
 global ldaca
 global member
 
@@ -14,7 +14,7 @@ def test_init():
     global ldaca
     ldaca = LDaCA(url=URL, token=API_TOKEN)
     # Saves the metadata in the data_dir
-    ldaca.get_collection(collection=COLLECTION, collection_type='Collection', data_dir='data')
+    ldaca.retrieve_collection(collection=COLLECTION, collection_type='Collection', data_dir='data')
 
     for cm in ldaca.collection_members:
         print("Member Id: %s" % cm['crateId'])

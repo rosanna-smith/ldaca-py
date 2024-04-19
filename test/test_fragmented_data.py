@@ -7,11 +7,20 @@ load_dotenv('../.env')
 API_TOKEN = os.getenv('API_KEY')
 URL = os.getenv('HOST')
 COLLECTION = os.getenv('COLLECTION_FRAGMENTED')
-BASE_PROFILE = os.getenv('BASE_PROFILE') or 'https://purl.archive.org/language-data-commons/profile#Collection'
+BASE_PROFILE = os.getenv('BASE_PROFILE') or 'https://w3id.org/ldac/profile'
 global ldaca
 global member
 
-
+def new_file_picker(f):
+    if f.get('encodingFormat'):
+        encodingFormat = f.get('encodingFormat')
+        if 'text/plain' in encodingFormat:
+            return f
+        else:
+            return None
+    else:
+        return None
+    
 def test_store_all_data():
     global ldaca
     data_dir = 'fragmented_data'
@@ -22,11 +31,13 @@ def test_store_all_data():
         collection_type='Collection',
         data_dir=data_dir)
     ldaca.retrieve_members_of_collection()
-    if len(ldaca.collection_members) > 0:
-        member = ldaca.collection_members[1]
-        my_file_picker = lambda f: f if f.get('encodingFormat') == 'text/csv' else None
-        all_files = ldaca.store_data(sub_collection=member['crateId'], entity_type='RepositoryObject', ldaca_files='ldaca_files', file_picker=my_file_picker, extension='csv')
-        assert len(all_files) == 209
+    if ldaca.collection_members is not None:
+        if len(ldaca.collection_members) > 0:
+            member = ldaca.collection_members[1]
+            my_file_picker = lambda f: f if f.get('encodingFormat') == 'text/plain' else None
+            all_files = ldaca.store_data(entity_type='RepositoryObject', ldaca_files='ldaca_files', file_picker=new_file_picker)
+            assert len(ldaca.text_files) == 558
+        else:
+            assert False
     else:
         assert False
-
