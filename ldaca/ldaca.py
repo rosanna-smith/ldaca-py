@@ -68,7 +68,6 @@ class LDaCA:
         self.text_files = []
         self.collection = None
         self._membership = []
-        self.ldaca_files_path = 'ldaca_files'
 
     def set_base_profile(self, profile):
         self.BASE_PROFILE = profile
@@ -102,15 +101,18 @@ class LDaCA:
     def membership(self, membership):
         self._membership = membership
 
-    def retrieve_collection(self, collection: str, collection_type: str, data_dir: str):
+    def retrieve_collection(self, collection: str, collection_type: str, data_dir: str, clear: bool = True):
         """
         Will retrieve the collection metadata in the selected data_dir and set the crate
         :param args:
         :param collection: The id of the collection
         :param collection_type: Can be either Collection or Object
         :param data_dir: set the data directory
+        :param clear: clear the data directory
         :return:
         """
+        if clear:
+            clear_files(self.data_dir)
         self.set_collection(collection)
         self.set_collection_type(collection_type)
         self.set_data_dir(data_dir)
@@ -161,7 +163,8 @@ class LDaCA:
             os.makedirs(self.data_dir)
 
         # Save it into a file
-        with open(self.data_dir + '/ro-crate-metadata.json', 'w', encoding='utf-8') as f:
+        ro_crate_file = os.path.join(self.data_dir, 'ro-crate-metadata.json')
+        with open(ro_crate_file, 'w', encoding='utf-8') as f:
             json.dump(metadata, f, ensure_ascii=False, indent=4)
 
     def retrieve_members_of_collection(self):
@@ -181,7 +184,7 @@ class LDaCA:
         else:
             logging.info(f"This collection {self.collection} does not have members")
 
-    def store_data(self, entity_type: str, ldaca_files: str = None, sub_collection: str = None,
+    def store_data(self, entity_type: str, sub_collection: str = None,
                    file_picker=None):
         """
         Stores data inside data_dir/ldaca_files filtered by entity_type
@@ -200,8 +203,6 @@ class LDaCA:
             if not col:
                 raise ValueError(f"Cannot find sub_collection {sub_collection}")
 
-        if ldaca_files:
-            self.ldaca_files_path = ldaca_files
         dialogues = []
         for entity in self.crate.contextual_entities + self.crate.data_entities:
             entity_list = as_list(entity.type)
@@ -255,19 +256,18 @@ class LDaCA:
 
     def download_filtered_files(self):
         """
-        Downloads all files selected into the ldaca_files_path folder
+        Downloads all files selected into the data_dir folder
         :return:
         """
         if len(self.text_files) > 0:
             # Todo: Pass in store_data an optional delete or confirmation
-            ldaca_files_folder = os.path.join(self.data_dir, self.ldaca_files_path)
-            clear_files(ldaca_files_folder)
+            #clear_files(ldaca_files_folder)
             for text_file in self.text_files:
                 try:
                     file_path = text_file['@id'].split('&path=')[1]
                     file_path_decoded = unquote(file_path)
                     file_path_array = file_path_decoded.split('/')
-                    self.download_file(text_file['@id'], file_path=os.path.join(ldaca_files_folder, *file_path_array))
+                    self.download_file(text_file['@id'], file_path=os.path.join(self.data_dir, *file_path_array))
                 except UnicodeDecodeError as e:
                     logging.error("Error decoding file ID:", e)
         else:
@@ -290,7 +290,6 @@ class LDaCA:
                 download_path = os.path.join(DOWNLOAD_DIR, file_path)
                 dir = os.path.dirname(download_path)
                 if dir and not os.path.exists(dir):
-                    print("Creating directory:",dir)
                     os.makedirs(dir)
                 
                 with open(download_path, 'wb') as out_file:

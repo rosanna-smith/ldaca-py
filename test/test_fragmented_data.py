@@ -35,7 +35,7 @@ def test_store_all_data():
         if len(ldaca.collection_members) > 0:
             member = ldaca.collection_members[1]
             my_file_picker = lambda f: f if f.get('encodingFormat') == 'text/plain' else None
-            all_files = ldaca.store_data(entity_type='RepositoryObject', ldaca_files='ldaca_files', file_picker=new_file_picker)
+            all_files = ldaca.store_data(entity_type='RepositoryObject', file_picker=new_file_picker)
             assert len(ldaca.text_files) == 558
         else:
             assert False

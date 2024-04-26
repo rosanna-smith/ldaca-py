@@ -23,7 +23,7 @@ def test_store_all_data():
         collection_type='Collection',
         data_dir=data_dir)
 
-    all_files = ldaca.store_data(entity_type='RepositoryObject', ldaca_files='ldaca_files')
+    all_files = ldaca.store_data(entity_type='RepositoryObject')
 
     assert len(all_files) == 102
 
