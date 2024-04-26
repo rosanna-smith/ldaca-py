@@ -28,6 +28,8 @@ ldaca.retrieve_collection(
     data_dir='data')
 ```
 
+If you don't want to delete any of the previous files/directories, select clear = False
+
 Find the sub_collections of such collection
 
 ```python
@@ -70,6 +72,8 @@ ldaca.retrieve_collection(
     collection_type='Collection',
     data_dir='atomic_data')
 ```
+
+If you don't want to delete any of the previous files/directories, select clear = False
 
 Use a file_picker function, to select only the desired files
 
