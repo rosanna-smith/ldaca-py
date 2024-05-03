@@ -31,7 +31,7 @@ def test_store_all_csv():
     assert len(all_files) == 34
     
     
-    #Version 1 with pandas - doesn't duplicate the header for each file so more difficult to differentiate the 34 files
+    #Version 1 with pandas - doesn't duplicate the header for each file
     # Set the path to your main folder containing subfolders and CSV files
     main_folder = 'atomic_data/files'
 
