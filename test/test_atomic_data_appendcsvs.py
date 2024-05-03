@@ -30,7 +30,7 @@ def test_store_all_csv():
 
     assert len(all_files) == 34
     
-    '''
+    
     #Version 1 with pandas - doesn't duplicate the header for each file so more difficult to differentiate the 34 files
     # Set the path to your main folder containing subfolders and CSV files
     main_folder = 'atomic_data/files'
@@ -51,9 +51,9 @@ def test_store_all_csv():
 
     # Write the combined DataFrame to a single CSV file
     combined_data.to_csv('atomic_data/combined_csvs_v1.csv', index=False)
-    '''
 
 
+'''
     #Version 2 with csv - keeps the header for each file so easier to differentiate
     # Set the path to your main folder containing subfolders and CSV files
 def test_combine_all_csv():
@@ -80,3 +80,4 @@ def test_combine_all_csv():
         csvwriter = csv.writer(csvfile)
         for row in combined_rows:
             csvwriter.writerow(row)
+'''

@@ -10,3 +10,5 @@ test/test_data
 .DS_Store
 build
 ldaca.egg-info
+combined_csvs_v1.csv
+combined_csvs_v2.csv
