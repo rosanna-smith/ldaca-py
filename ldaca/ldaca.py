@@ -148,6 +148,7 @@ class LDaCA:
 
         response = requests.get(self.url + '/object/meta', params=params)
         logging.debug(response.request.url)
+        print(response.request.url)
         collection = response.json()
         if collection.get('error'):
             raise ValueError("There was an error trying to get metadata from API")
@@ -228,7 +229,7 @@ class LDaCA:
                 dialogue = col_dialogue.as_jsonld()
                 files = as_list(dialogue.get('hasPart'))
                 # file_picker is a function that can be passed otherwise a basic one is used
-                self.append_if_text(files, file_picker)
+                self.append_if_text(files, dialogue, file_picker)
             self.download_filtered_files()
             logging.info(f"Found {len(self.text_files)} files")
             return self.text_files
@@ -237,7 +238,7 @@ class LDaCA:
             all_files = []
             return all_files
 
-    def append_if_text(self, files, file_picker = None):
+    def append_if_text(self, files, dialogue, file_picker = None):
         """
         Append filtered files to text_files
         :param files: ids of files list
@@ -247,6 +248,7 @@ class LDaCA:
         for file in files:
             file_crate = self.crate.dereference(file['@id'])
             file_crate_json = file_crate.as_jsonld()
+            file_crate_json["dialogue_id"] = dialogue['@id']
             if not file_picker:
                 self.text_files.append(file)
             else:
@@ -264,7 +266,9 @@ class LDaCA:
             #clear_files(ldaca_files_folder)
             for text_file in self.text_files:
                 try:
-                    file_path = text_file['@id'].split('&path=')[1]
+                    #file_path = text_file['@id'].split('&path=')[1]
+                    file_path = text_file['@id'].replace(self.url + "/object/" + text_file["dialogue_id"],"")
+                    print(file_path)
                     file_path_decoded = unquote(file_path)
                     file_path_array = file_path_decoded.split('/')
                     self.download_file(text_file['@id'], file_path=os.path.join(self.data_dir, *file_path_array))
